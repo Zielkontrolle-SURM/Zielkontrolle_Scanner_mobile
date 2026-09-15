@@ -2,7 +2,12 @@ package com.example.qrscanner
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.graphics.Color
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.view.View
+import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ExperimentalGetImage
@@ -25,15 +30,35 @@ import java.util.concurrent.Executors
 
 class MainActivity : AppCompatActivity() {
     private lateinit var previewView: PreviewView
+    private lateinit var flashOverlay: View
     private val executor = Executors.newSingleThreadExecutor()
     private val client = OkHttpClient()
-    private var lastSent = ""
+    private val uiHandler = Handler(Looper.getMainLooper())
     private var lastScan = ""
     private var ip = "192.168.178.143:8080"
+
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState); previewView = PreviewView(this); setContentView(
-            previewView
-        )
+        super.onCreate(savedInstanceState)
+        previewView = PreviewView(this)
+        flashOverlay = View(this).apply {
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            )
+            visibility = View.GONE
+            alpha = 0f
+        }
+
+        val root = FrameLayout(this).apply {
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            )
+            addView(previewView)
+            addView(flashOverlay)
+        }
+        setContentView(root)
+
         if (ContextCompat.checkSelfPermission(
                 this,
                 Manifest.permission.CAMERA
@@ -74,10 +99,6 @@ class MainActivity : AppCompatActivity() {
         val image = InputImage.fromMediaImage(media, imageProxy.imageInfo.rotationDegrees)
         BarcodeScanning.getClient().process(image).addOnSuccessListener { codes ->
             codes.forEach { b ->
-                val v = b.rawValue
-                    ?: return@forEach; if (Regex("^#\\d{4}$").matches(v) && v != lastSent) {
-                lastSent = v; sendToApi(v)
-            }
                 val v = b.rawValue ?: return@forEach
                 if (v == lastScan) return@forEach
                 if (Regex("^#\\d{4}$").matches(v)) {
@@ -86,9 +107,30 @@ class MainActivity : AppCompatActivity() {
                 } else if (Regex("^CONFIG=.*$").matches(v)) {
                     lastScan = v
                     ip = v.removePrefix("CONFIG=")
+                    // flash screen blue to indicate config change
+                    runOnUiThread { flashScreen(Color.argb(120, 99, 129, 255)) }
                 }
             }
         }.addOnCompleteListener { imageProxy.close() }
+    }
+
+    private fun flashScreen(color: Int) {
+        uiHandler.post {
+            flashOverlay.setBackgroundColor(color)
+            flashOverlay.visibility = View.VISIBLE
+            flashOverlay.alpha = 0f
+            flashOverlay.animate()
+                .alpha(0.7f)
+                .setDuration(1000)
+                .withEndAction {
+                    flashOverlay.animate()
+                        .alpha(0f)
+                        .setDuration(220)
+                        .withEndAction { flashOverlay.visibility = View.GONE }
+                        .start()
+                }
+                .start()
+        }
     }
 
     private fun sendToApi(value: String) {
@@ -100,9 +142,16 @@ class MainActivity : AppCompatActivity() {
         client.newCall(req).enqueue(object : Callback {
             override fun onFailure(call: Call, e: java.io.IOException) {
                 android.util.Log.e("MainActivity", "API call failed", e)
+                runOnUiThread { flashScreen(Color.argb(120, 255, 99, 99)) }
             }
             override fun onResponse(call: Call, response: Response) {
-                android.util.Log.d("MainActivity", $$"API response: ${response.code}")
+                if (response.isSuccessful) {
+                    android.util.Log.d("MainActivity", "API response: ${response.code}")
+                    runOnUiThread { flashScreen(Color.argb(120, 99, 255, 129)) }
+                } else {
+                    android.util.Log.e("MainActivity", "API call unsuccessful: ${response.code}")
+                    runOnUiThread { flashScreen(Color.argb(120, 255, 99, 99)) }
+                }
                 response.close()
             }
         })
