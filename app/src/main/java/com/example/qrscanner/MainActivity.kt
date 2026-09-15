@@ -28,6 +28,8 @@ class MainActivity : AppCompatActivity() {
     private val executor = Executors.newSingleThreadExecutor()
     private val client = OkHttpClient()
     private var lastSent = ""
+    private var lastScan = ""
+    private var ip = "192.168.178.143:8080"
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState); previewView = PreviewView(this); setContentView(
             previewView
@@ -76,6 +78,15 @@ class MainActivity : AppCompatActivity() {
                     ?: return@forEach; if (Regex("^#\\d{4}$").matches(v) && v != lastSent) {
                 lastSent = v; sendToApi(v)
             }
+                val v = b.rawValue ?: return@forEach
+                if (v == lastScan) return@forEach
+                if (Regex("^#\\d{4}$").matches(v)) {
+                    lastScan = v
+                    sendToApi(v)
+                } else if (Regex("^CONFIG=.*$").matches(v)) {
+                    lastScan = v
+                    ip = v.removePrefix("CONFIG=")
+                }
             }
         }.addOnCompleteListener { imageProxy.close() }
     }
@@ -83,7 +94,7 @@ class MainActivity : AppCompatActivity() {
     private fun sendToApi(value: String) {
         val number = value.removePrefix("#").toIntOrNull() ?: return
         val req = Request.Builder()
-            .url("http://192.168.178.143:8080/scan/$number")
+            .url("http://$ip/scan/$number")
             .post("".toRequestBody(null))
             .build()
         client.newCall(req).enqueue(object : Callback {
