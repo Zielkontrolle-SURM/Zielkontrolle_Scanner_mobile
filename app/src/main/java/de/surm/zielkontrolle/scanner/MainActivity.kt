@@ -1,4 +1,4 @@
-package com.example.qrscanner
+package de.surm.zielkontrolle.scanner
 
 import android.Manifest
 import android.content.pm.PackageManager

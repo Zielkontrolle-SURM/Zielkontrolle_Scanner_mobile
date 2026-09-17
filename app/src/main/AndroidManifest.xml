@@ -1,7 +1,14 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+
     <uses-permission android:name="android.permission.CAMERA"/>
     <uses-permission android:name="android.permission.INTERNET"/>
-    <application android:label="Zielkontrolle_Scanner_mobile" android:theme="@style/Theme.QRScanner" android:usesCleartextTraffic="true">
+    <application
+        android:icon="@mipmap/ic_launcher"
+        android:label="Zielkontrolle_Scanner_mobile" android:theme="@style/Theme.QRScanner" android:usesCleartextTraffic="true">
         <activity android:name=".MainActivity" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>

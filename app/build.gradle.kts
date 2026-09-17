@@ -1,8 +1,8 @@
 plugins { id("com.android.application") }
 android {
-    namespace = "com.example.qrscanner"; compileSdk = 37
+    namespace = "de.surm.zielkontrolle.scanner"; compileSdk = 37
     defaultConfig {
-        applicationId = "com.example.qrscanner"; minSdk = 24; targetSdk = 34; versionCode =
+        applicationId = "de.surm.zielkontrolle.scanner"; minSdk = 24; targetSdk = 34; versionCode =
         1; versionName = "1.0"
     }
     buildFeatures { viewBinding = true }
