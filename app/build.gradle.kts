@@ -1,5 +1,25 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins { id("com.android.application") }
+
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties()
+if (keystorePropertiesFile.exists()) {
+    FileInputStream(keystorePropertiesFile).use { keystoreProperties.load(it) }
+}
+
 android {
+    signingConfigs {
+        if (keystorePropertiesFile.exists()) {
+            create("release") {
+                storeFile = file(keystoreProperties.getProperty("storeFile", ""))
+                keyAlias = keystoreProperties.getProperty("keyAlias", "")
+                storePassword = keystoreProperties.getProperty("storePassword", "")
+                keyPassword = keystoreProperties.getProperty("keyPassword", "")
+            }
+        }
+    }
     namespace = "de.surm.zielkontrolle.scanner"
     compileSdk = 37
     defaultConfig {
@@ -16,7 +36,9 @@ android {
     }
     buildTypes {
         getByName("release") {
-            signingConfig = signingConfigs.getByName("debug")
+            if (keystorePropertiesFile.exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
     // Configure Kotlin compiler options using the new compilerOptions DSL (sets JVM target to 17)

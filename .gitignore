@@ -30,6 +30,9 @@ local.properties
 /bin/
 /gen/
 
+# Signing
+/keystore.properties
+
 # OS files
 .DS_Store
 Thumbs.db
