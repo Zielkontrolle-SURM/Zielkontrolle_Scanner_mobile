@@ -1,11 +1,16 @@
 package de.surm.zielkontrolle.scanner
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import android.view.View
 import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
@@ -104,11 +109,13 @@ class MainActivity : AppCompatActivity() {
                 if (Regex("^#\\d{4}$").matches(v)) {
                     lastScan = v
                     sendToApi(v)
+                    vibrate(this)
                 } else if (Regex("^CONFIG=.*$").matches(v)) {
                     lastScan = v
                     ip = v.removePrefix("CONFIG=")
                     // flash screen blue to indicate config change
                     runOnUiThread { flashScreen(Color.argb(120, 99, 129, 255)) }
+                    vibrate(this)
                 }
             }
         }.addOnCompleteListener { imageProxy.close() }
@@ -155,5 +162,21 @@ class MainActivity : AppCompatActivity() {
                 response.close()
             }
         })
+    }
+
+    private fun vibrate(ctx: Context){
+        val vibrator : Vibrator
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val vibratorManager = ctx.getSystemService(VIBRATOR_MANAGER_SERVICE) as VibratorManager
+            vibrator = vibratorManager.defaultVibrator
+            vibrator.vibrate(VibrationEffect.createWaveform(longArrayOf(300), intArrayOf(255), -1))
+        } else {
+            vibrator = ctx.getSystemService(VIBRATOR_SERVICE) as Vibrator
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                vibrator.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK))
+            } else {
+                vibrator.vibrate(300L)
+            }
+        }
     }
 }

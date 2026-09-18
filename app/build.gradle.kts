@@ -1,13 +1,23 @@
 plugins { id("com.android.application") }
 android {
-    namespace = "de.surm.zielkontrolle.scanner"; compileSdk = 37
+    namespace = "de.surm.zielkontrolle.scanner"
+    compileSdk = 37
     defaultConfig {
-        applicationId = "de.surm.zielkontrolle.scanner"; minSdk = 24; targetSdk = 34; versionCode =
-        1; versionName = "1.0"
+        applicationId = "de.surm.zielkontrolle.scanner"
+        minSdk = 24
+        targetSdk = 34
+        versionCode = 1
+        versionName = "1.0"
     }
     buildFeatures { viewBinding = true }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+    buildTypes {
+        getByName("release") {
+            signingConfig = signingConfigs.getByName("debug")
+        }
     }
     // Configure Kotlin compiler options using the new compilerOptions DSL (sets JVM target to 17)
     tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile>().configureEach {
